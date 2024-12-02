@@ -1,13 +1,25 @@
-import { TonClient, WalletContractV4, internal } from "@ton/ton";
+import { TonClient, WalletContractV4, internal } from "@ton/ton"; 
 import { mnemonicToPrivateKey } from "@ton/crypto";
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// import.meta.url yordamida __dirname ni olish
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Config faylini o'qish
+const configPath = path.join(__dirname, 'wallet_configs', 'testnet', 'wallet_config.json');
+const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
 
 async function performTransfer() {
   const client = new TonClient({
-    endpoint: 'https://testnet.toncenter.com/api/v2/jsonRPC',
+    endpoint: config.network === 'testnet' ? 'https://testnet.toncenter.com/api/v2/jsonRPC' : 'https://toncenter.com/api/v2/jsonRPC',
     apiKey: 'fdfc50434ff75d5d883490c0ddf73b48336d9a7843d7419040346057983c5af7'
   });
 
-  const mnemonics = "vacant piece tell size fantasy book clean casino general inmate erosion never truth outer nest quantum crazy crush side convince lunch park fruit turkey".split(" ");
+  // Mnemoniklarni config faylidan olish
+  const mnemonics = config.mnemonics.split(" ");
   
   try {
     const keyPair = await mnemonicToPrivateKey(mnemonics);
@@ -19,11 +31,10 @@ async function performTransfer() {
     
     const contract = client.open(wallet);
     
-    // Instead of isDeployed, check the balance to determine if wallet exists
+    // Wallet balansini tekshirish
     const balance = await contract.getBalance();
     console.log('Wallet balance:', balance.toString(), 'nanoTON');
     
-    // Rest of the transfer logic remains the same
     const transferAmount = BigInt(1_000_000_000); // 1 TON in nanoTON
     if (balance < transferAmount) {
       console.log('Insufficient balance for transfer');
